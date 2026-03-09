@@ -1,6 +1,4 @@
 pyarrow
 pandas
-streamlit
 plotly
 pillow
-altair==4.2.2
