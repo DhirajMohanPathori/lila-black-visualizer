@@ -127,9 +127,9 @@ with st.sidebar:
     selected_date = st.selectbox("📅 Date", dates)
     filtered = df[(df['map_id'] == selected_map) & (df['date'] == selected_date)]
     matches = sorted(filtered['match_id_clean'].unique())
-    selected_match = st.selectbox("🎯 Match ID", matches, format_func=lambda x: x[:18] + "...")
+    selected_match = st.selectbox("🎯 Match", matches, format_func=lambda x: f"Match {list(matches).index(x)+1} ({x[:8]}...)")
     st.markdown("---")
-    view_mode = st.radio("View Mode", ["🗺️ Journey", "🔥 Heatmap", "📊 Aggregate"])
+    view_mode = st.radio("View Mode", ["🗺️ Journey", "🔥 Heatmap", "📊 Cross-Match Heatmap"])
     st.markdown("---")
 
     if view_mode == "🗺️ Journey":
@@ -147,7 +147,7 @@ with st.sidebar:
         ])
         heatmap_opacity = st.slider("Opacity", 0.3, 1.0, 0.65)
 
-    elif view_mode == "📊 Aggregate":
+    elif view_mode == "📊 Cross-Match Heatmap":
         agg_event = st.selectbox("Event Type", [
             "Kill", "Killed", "KilledByStorm", "Loot", "BotKill", "BotKilled"
         ])
@@ -162,6 +162,14 @@ match_df = match_df.sort_values('ts')
 
 # ── Header ────────────────────────────────────────────────────
 st.markdown('<div class="main-title">LILA BLACK</div>', unsafe_allow_html=True)
+with st.expander("ℹ️ How to use this tool"):
+    st.markdown("""
+- **Journey view** — pick a match and watch player movement trails + events unfold using the timeline slider
+- **Heatmap** — see density of movement, kills, loot across the map for any single match
+- **Cross-Match Heatmap** — see patterns aggregated across ALL matches on a map/date
+- **Level Designer Insight** — auto-generated recommendation appears below every map view
+- **Tip:** Start with a match that has 200+ Total Events for the richest view
+""")
 st.markdown(f'<div class="subtitle">MAP: {selected_map.upper()}  |  {selected_date.replace("_"," ").upper()}</div>', unsafe_allow_html=True)
 
 humans = match_df[~match_df['is_bot']]['user_id'].nunique()
