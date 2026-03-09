@@ -289,7 +289,7 @@ if view_mode == "🗺️ Journey":
                         showlegend=False, hoverinfo='skip'
                     ))
 
-            placeholder.plotly_chart(frame_fig, use_container_width=True)
+            placeholder.plotly_chart(frame_fig, use_container_width=True, key="play_chart")
             time.sleep(0.05)
 
     # Draw trails
@@ -406,7 +406,7 @@ elif view_mode == "📊 Aggregate":
         st.warning(f"Not enough '{agg_event}' events on this map/date.")
 
 # ── Render chart ──────────────────────────────────────────────
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="main_chart")
 
 # ── Match breakdown ───────────────────────────────────────────
 with st.expander("📊 Match Event Breakdown"):
