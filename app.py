@@ -189,13 +189,14 @@ if view_mode == "🗺️ Journey":
         plot_df = plot_df[~plot_df['is_bot']]
 
     # Timeline slider
-    ts_vals = match_df['ts'].astype('int64') // 1_000_000
-    ts_min, ts_max = int(ts_vals.min()), int(ts_vals.max())
+    ts_ms = match_df['ts'].astype('int64')
+    ts_min, ts_max = int(ts_ms.min()), int(ts_ms.max())
+
     duration = ts_max - ts_min
     timeline_pct = st.slider("⏱️ Match Timeline — drag to replay", 0, 100, 100, format="%d%%")
     ts_cutoff = ts_min + int((timeline_pct / 100) * duration)
-    plot_ts = plot_df['ts'].astype('int64') // 1_000_000
-    plot_df = plot_df[plot_ts <= ts_cutoff]
+    plot_df = plot_df[plot_df['ts'].astype('int64') <= ts_cutoff]
+
 
     # Movement trails
     if show_trails:
@@ -279,6 +280,43 @@ elif view_mode == "📊 Aggregate":
 
 # ── Render ────────────────────────────────────────────────────
 st.plotly_chart(fig, use_container_width=True, key="main_chart")
+# ── Auto Insight ──────────────────────────────────────────────
+if view_mode == "🗺️ Journey" and len(plot_df) > 0:
+    pos_df = plot_df[plot_df['event'].isin(['Position', 'BotPosition'])]
+    if len(pos_df) > 10:
+        # Find hottest zone by dividing map into 3x3 grid
+        pos_df = pos_df.copy()
+        pos_df['grid_x'] = (pos_df['norm_x'] * 3).astype(int).clip(0, 2)
+        pos_df['grid_y'] = (pos_df['norm_y'] * 3).astype(int).clip(0, 2)
+        zone_counts = pos_df.groupby(['grid_x', 'grid_y']).size()
+        hot_zone = zone_counts.idxmax()
+        hot_pct = int(zone_counts.max() / len(pos_df) * 100)
+        zone_labels = {0: 'West', 1: 'Central', 2: 'East'}
+        zone_labels_y = {0: 'South', 1: 'Mid', 2: 'North'}
+        zone_name = f"{zone_labels_y[hot_zone[1]]}-{zone_labels[hot_zone[0]]}"
+        kill_count = len(plot_df[plot_df['event'].isin(['Kill', 'BotKill', 'Killed', 'BotKilled'])])
+        loot_count = len(plot_df[plot_df['event'] == 'Loot'])
+        st.markdown(f"""
+<div style='background: linear-gradient(135deg, #1a1a2e, #16213e); border-left: 4px solid #e63946; border-radius: 8px; padding: 16px 20px; margin-top: 12px;'>
+    <div style='color: #e63946; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700;'>🔍 Level Designer Insight</div>
+    <div style='color: #ffffff; font-size: 1rem; margin-top: 6px;'>
+        <b>{hot_pct}% of player movement</b> concentrated in the <b>{zone_name}</b> zone — 
+        consider adding cover or objectives here to redistribute traffic.
+        This match had <b>{kill_count} combat events</b> and <b>{loot_count} loot pickups</b>.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+elif view_mode == "🔥 Heatmap" and len(match_df) > 0:
+    st.markdown(f"""
+<div style='background: linear-gradient(135deg, #1a1a2e, #16213e); border-left: 4px solid #ffa726; border-radius: 8px; padding: 16px 20px; margin-top: 12px;'>
+    <div style='color: #ffa726; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700;'>🔍 Level Designer Insight</div>
+    <div style='color: #ffffff; font-size: 1rem; margin-top: 6px;'>
+        Red zones indicate high player density — if these overlap with choke points or spawn areas, 
+        consider redistributing loot or adding alternate routes to reduce bottlenecks.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ── Breakdown ─────────────────────────────────────────────────
 with st.expander("📊 Match Event Breakdown"):
